@@ -1,0 +1,11 @@
+# Folders
+/.build
+/.vscode
+DerivedData/
+/Packages
+xcuserdata/
+# Files
+.DS_Store
+.swiftpm/configuration/registries.json
+.swiftpm/xcode/package.xcworkspace/contents.xcworkspacedata
+.netrc
