@@ -21,8 +21,23 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-import SwiftGir
+import ArgumentParser
+import XMLCoder
 
-let helloMessage = formatHelloMessage("World")
+struct Hello: Codable {
+    let hello: String
+}
 
-print(helloMessage)
+@main
+struct Repeat: ParsableCommand {
+    @Argument(help: "The GIR file to convert")
+    var file: String
+
+    mutating func run() throws {
+        let hello = Hello(hello: file)
+        let encoded = try XMLCoder.XMLEncoder().encode(hello)
+        let data = String(decoding: encoded, as: UTF8.self)
+
+        print(data)
+    }
+}

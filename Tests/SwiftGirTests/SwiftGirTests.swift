@@ -1,5 +1,5 @@
-import XCTest
 @testable import SwiftGir
+import XCTest
 
 final class SwiftGirTests: XCTestCase {
     func testExample() throws {

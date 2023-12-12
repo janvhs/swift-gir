@@ -22,5 +22,5 @@
 // https://docs.swift.org/swift-book
 
 public func formatHelloMessage(_ name: String) -> String {
-  return "Hello, \(name)"
+    "Hello, \(name)"
 }
