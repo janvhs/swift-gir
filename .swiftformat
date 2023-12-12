@@ -1,0 +1,8 @@
+--binarygrouping none
+--closingparen same-line
+--decimalgrouping none
+--hexgrouping none
+--octalgrouping none
+--semicolons never
+--wraparguments before-first
+--wrapcollections before-first
