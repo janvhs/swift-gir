@@ -22,22 +22,104 @@
 // https://docs.swift.org/swift-book
 
 import ArgumentParser
+import Foundation
 import XMLCoder
 
-struct Hello: Codable {
-    let hello: String
-}
-
 @main
-struct Repeat: ParsableCommand {
+struct Generate: ParsableCommand {
     @Argument(help: "The GIR file to convert")
-    var file: String
+    var girFile: String
+
+    @Argument(help: "Where to put the generated Swift files", completion: .directory)
+    var out: String = "-"
 
     mutating func run() throws {
-        let hello = Hello(hello: file)
-        let encoded = try XMLCoder.XMLEncoder().encode(hello)
-        let data = String(decoding: encoded, as: UTF8.self)
+        let girFileURL = URL(filePath: girFile)
+        let girContents = try Data(contentsOf: girFileURL)
+        let decoder = XMLDecoder()
 
-        print(data)
+        decoder.keyDecodingStrategy = .custom(decodeGIRKeys)
+
+        let repo = try decoder.decode(GIRepository.self, from: girContents)
+
+        print(repo)
     }
+}
+
+// TODO(janvhs): To fully fit in Swift's naming convention, one could uppercase abbr. like url to URL.
+/// Decode the GIR-XML Keys to fit Swift's naming conventions.
+/// This has to be done to represent keys containing hyphens
+/// and colons on Swift's structs.
+func decodeGIRKeys(_ keys: [CodingKey]) -> CodingKey {
+    // Panic, if there is no key
+    let key = keys.last!
+
+    // If the key contains a hyphen or colon, convert it to camelCase
+    var keyParts = key.stringValue.split(separator: "-").flatMap { part in
+        part.split(separator: ":")
+    }
+
+    // The head has to stay lower cased
+    let casedKeyHead = keyParts.removeFirst()
+
+    // The rest of the body has to be KebabCased
+    let casedKeyRest = keyParts.map { part in
+        part.capitalized
+    }.joined()
+
+    let casedKey = String(casedKeyHead + casedKeyRest)
+
+    return XMLKey(stringValue: casedKey, intValue: key.intValue)
+}
+
+// Taken from https://github.com/CoreOffice/XMLCoder
+// TODO(janvhs): Maybe just extend String with CodingKey
+/// Shared Key Types
+struct XMLKey: CodingKey {
+    public let stringValue: String
+    public let intValue: Int?
+
+    public init?(stringValue: String) {
+        self.init(key: stringValue)
+    }
+
+    public init?(intValue: Int) {
+        self.init(index: intValue)
+    }
+
+    public init(stringValue: String, intValue: Int?) {
+        self.stringValue = stringValue
+        self.intValue = intValue
+    }
+
+    init(key: String) {
+        self.init(stringValue: key, intValue: nil)
+    }
+
+    init(index: Int) {
+        self.init(stringValue: "\(index)", intValue: index)
+    }
+
+    static let `super` = XMLKey(stringValue: "super")!
+}
+
+struct GIRepository: Codable {
+    let xmlns: URL
+    let xmlnsC: URL
+    let version: Float
+    let package: GIPackage
+    let cInclude: GICInclude
+    let namespace: GINamespace
+}
+
+struct GIPackage: Codable {
+    let name: String
+}
+
+struct GICInclude: Codable {
+    let name: String
+}
+
+struct GINamespace: Codable {
+    let name: String
 }
