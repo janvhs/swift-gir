@@ -1,8 +1,5 @@
---binarygrouping none
 --closingparen same-line
---decimalgrouping none
---hexgrouping none
---octalgrouping none
 --semicolons never
+--swiftversion 5.9
 --wraparguments before-first
 --wrapcollections before-first
