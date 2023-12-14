@@ -38,29 +38,42 @@ struct Generate: ParsableCommand {
         let girContents = try Data(contentsOf: girFileURL)
         let decoder = XMLDecoder()
 
-        decoder.keyDecodingStrategy = .custom(decodeGIRKeys)
+        decoder.keyDecodingStrategy = .custom(decodeGIRKey)
 
         let repo = try decoder.decode(GIRepository.self, from: girContents)
-
         print(repo)
     }
 }
+
+// TODO(janvhs): Add functionality to XMLCodable, so I can remove func decodeGIRKey.
+// struct GIAlias: Codable {
+//     @Attribute var name: String
+//     @Attribute(name: "c:type") var cType: String
+//
+//     @Element var doc: String
+//     @Element var type: GIType
+// }
 
 // TODO(janvhs): To fully fit in Swift's naming convention, one could uppercase abbr. like url to URL.
 /// Decode the GIR-XML Keys to fit Swift's naming conventions.
 /// This has to be done to represent keys containing hyphens
 /// and colons on Swift's structs.
-func decodeGIRKeys(_ keys: [CodingKey]) -> CodingKey {
+func decodeGIRKey(_ keys: [CodingKey]) -> CodingKey {
     // Panic, if there is no key
     let key = keys.last!
 
     // If the key contains a hyphen or colon, convert it to camelCase
-    var keyParts = key.stringValue.split(separator: "-").flatMap { part in
-        part.split(separator: ":")
-    }
+    var keyParts = key.stringValue.split(separator: "-")
+        .flatMap { part in
+            part.split(separator: ":")
+        }
 
     // The head has to stay lower cased
-    let casedKeyHead = keyParts.removeFirst()
+    let casedKeyHead = if keyParts.count > 0 {
+        String(keyParts.removeFirst())
+    } else {
+        ""
+    }
 
     // The rest of the body has to be KebabCased
     let casedKeyRest = keyParts.map { part in
@@ -104,22 +117,52 @@ struct XMLKey: CodingKey {
 }
 
 struct GIRepository: Codable {
+    // Attributes
     let xmlns: URL
-    let xmlnsC: URL
+    var xmlnsC: URL
+    let xmlnsGlib: URL
     let version: Float
+
+    // Elements
     let package: GIPackage
     let cInclude: GICInclude
     let namespace: GINamespace
 }
 
 struct GIPackage: Codable {
+    // Attributes
     let name: String
 }
 
 struct GICInclude: Codable {
+    // Attributes
     let name: String
 }
 
 struct GINamespace: Codable {
+    // Attributes
     let name: String
+    let version: Float
+    let sharedLibrary: String
+    let cIdentifierPrefixes: String
+    let cSymbolPrefixes: String
+
+    // Elements
+    let alias: GIAlias
+}
+
+struct GIAlias: Codable {
+    // Attributes
+    let name: String
+    let cType: String
+
+    // Elements
+    // TODO(janvhs): Make a GIDoc struct
+    let doc: String
+    let type: GIType
+}
+
+struct GIType: Codable {
+    let name: String
+    let cType: String
 }
