@@ -23,7 +23,7 @@
 
 import ArgumentParser
 import Foundation
-import XMLCoder
+import SwiftGir
 
 @main
 struct Generate: ParsableCommand {
@@ -36,26 +36,11 @@ struct Generate: ParsableCommand {
     mutating func run() throws {
         let girFileURL = URL(filePath: girFile)
         let girContents = try Data(contentsOf: girFileURL)
-        let decoder = XMLDecoder()
+        let decoder = GIDecoder()
 
-        let repo = try decoder.decode(GIRepository.self, from: girContents)
+        let repo = try decoder.decode(girContents)
 
-        let encoder = XMLEncoder()
-        encoder.prettyPrintIndentation = .spaces(2)
-
-        let encodedGIR = try encoder.encode(repo, withRootKey: "repository", header: XMLHeader(version: 1.0))
-
-        if out == "-" {
-            let girXMLText = String(data: encodedGIR, encoding: .utf8)
-            guard let girXMLText else {
-                return
-            }
-
-            print(girXMLText)
-        } else {
-            let outURL = URL(filePath: out)
-            try encodedGIR.write(to: outURL)
-        }
+        print(repo.version)
     }
 }
 
@@ -97,102 +82,4 @@ struct XMLKey: CodingKey {
     }
 
     static let `super` = XMLKey(stringValue: "super")!
-}
-
-struct GIRepository: Codable {
-    @Attribute var xmlns: String
-    @Attribute var xmlnsC: String
-    @Attribute var xmlnsGLib: String
-    @Attribute var version: Float
-
-    @Element var package: GIPackage
-    @Element var cInclude: GICInclude
-    @Element var namespace: GINamespace
-
-    enum CodingKeys: String, CodingKey {
-        // Attributes
-        case xmlns
-        case xmlnsC = "xmlns:c"
-        case xmlnsGLib = "xmlns:glib"
-        case version
-
-        // Elements
-        case package
-        case cInclude = "c:include"
-        case namespace
-    }
-}
-
-struct GIPackage: Codable {
-    @Attribute var name: String
-}
-
-struct GICInclude: Codable {
-    @Attribute var name: String
-}
-
-struct GINamespace: Codable {
-    @Attribute var name: String
-    @Attribute var version: Float
-    @Attribute var sharedLibrary: String
-    @Attribute var cIdentifierPrefixes: String
-    @Attribute var cSymbolPrefixes: String
-
-    @Element var alias: GIAlias
-
-    enum CodingKeys: String, CodingKey {
-        // Attributes
-        case name
-        case version
-        case sharedLibrary = "shared-library"
-        case cIdentifierPrefixes = "c:identifier-prefixes"
-        case cSymbolPrefixes = "c:symbol-prefixes"
-
-        // Elements
-        case alias
-    }
-}
-
-struct GIAlias: Codable {
-    @Attribute var name: String
-    @Attribute var cType: String
-
-    @Element var doc: GIDoc
-    @Element var type: GIType
-
-    enum CodingKeys: String, CodingKey {
-        // Attributes
-        case name
-        case cType = "c:type"
-
-        // Elements
-        case doc
-        case type
-    }
-}
-
-struct GIDoc: Codable {
-    // TODO(janvhs): this should probably be an enum
-    @Attribute var xmlSpace: String
-
-    @Element var value: String
-
-    enum CodingKeys: String, CodingKey {
-        // Attributes
-        case xmlSpace = "xml:space"
-
-        // Elements
-        case value = ""
-    }
-}
-
-struct GIType: Codable {
-    @Attribute var name: String
-    @Attribute var cType: String
-
-    enum CodingKeys: String, CodingKey {
-        // Attributes
-        case name
-        case cType = "c:type"
-    }
 }
