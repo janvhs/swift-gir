@@ -38,14 +38,28 @@ struct Generate: ParsableCommand {
         let girContents = try Data(contentsOf: girFileURL)
         let decoder = XMLDecoder()
 
-        decoder.keyDecodingStrategy = .custom(decodeGIRKey)
-
         let repo = try decoder.decode(GIRepository.self, from: girContents)
-        print(repo)
+
+        let encoder = XMLEncoder()
+        encoder.prettyPrintIndentation = .spaces(2)
+
+        let encodedGIR = try encoder.encode(repo, withRootKey: "repository", header: XMLHeader(version: 1.0))
+
+        if out == "-" {
+            let girXMLText = String(data: encodedGIR, encoding: .utf8)
+            guard let girXMLText else {
+                return
+            }
+
+            print(girXMLText)
+        } else {
+            let outURL = URL(filePath: out)
+            try encodedGIR.write(to: outURL)
+        }
     }
 }
 
-// TODO(janvhs): Add functionality to XMLCodable, so I can remove func decodeGIRKey.
+// TODO(janvhs): Add functionality to XMLCodable, for a simpler API.
 // struct GIAlias: Codable {
 //     @Attribute var name: String
 //     @Attribute(name: "c:type") var cType: String
@@ -53,37 +67,6 @@ struct Generate: ParsableCommand {
 //     @Element var doc: String
 //     @Element var type: GIType
 // }
-
-// TODO(janvhs): To fully fit in Swift's naming convention, one could uppercase abbr. like url to URL.
-/// Decode the GIR-XML Keys to fit Swift's naming conventions.
-/// This has to be done to represent keys containing hyphens
-/// and colons on Swift's structs.
-func decodeGIRKey(_ keys: [CodingKey]) -> CodingKey {
-    // Panic, if there is no key
-    let key = keys.last!
-
-    // If the key contains a hyphen or colon, convert it to camelCase
-    var keyParts = key.stringValue.split(separator: "-")
-        .flatMap { part in
-            part.split(separator: ":")
-        }
-
-    // The head has to stay lower cased
-    let casedKeyHead = if keyParts.count > 0 {
-        String(keyParts.removeFirst())
-    } else {
-        ""
-    }
-
-    // The rest of the body has to be KebabCased
-    let casedKeyRest = keyParts.map { part in
-        part.capitalized
-    }.joined()
-
-    let casedKey = String(casedKeyHead + casedKeyRest)
-
-    return XMLKey(stringValue: casedKey, intValue: key.intValue)
-}
 
 // Taken from https://github.com/CoreOffice/XMLCoder
 // TODO(janvhs): Maybe just extend String with CodingKey
@@ -117,52 +100,99 @@ struct XMLKey: CodingKey {
 }
 
 struct GIRepository: Codable {
-    // Attributes
-    let xmlns: URL
-    var xmlnsC: URL
-    let xmlnsGlib: URL
-    let version: Float
+    @Attribute var xmlns: String
+    @Attribute var xmlnsC: String
+    @Attribute var xmlnsGLib: String
+    @Attribute var version: Float
 
-    // Elements
-    let package: GIPackage
-    let cInclude: GICInclude
-    let namespace: GINamespace
+    @Element var package: GIPackage
+    @Element var cInclude: GICInclude
+    @Element var namespace: GINamespace
+
+    enum CodingKeys: String, CodingKey {
+        // Attributes
+        case xmlns
+        case xmlnsC = "xmlns:c"
+        case xmlnsGLib = "xmlns:glib"
+        case version
+
+        // Elements
+        case package
+        case cInclude = "c:include"
+        case namespace
+    }
 }
 
 struct GIPackage: Codable {
-    // Attributes
-    let name: String
+    @Attribute var name: String
 }
 
 struct GICInclude: Codable {
-    // Attributes
-    let name: String
+    @Attribute var name: String
 }
 
 struct GINamespace: Codable {
-    // Attributes
-    let name: String
-    let version: Float
-    let sharedLibrary: String
-    let cIdentifierPrefixes: String
-    let cSymbolPrefixes: String
+    @Attribute var name: String
+    @Attribute var version: Float
+    @Attribute var sharedLibrary: String
+    @Attribute var cIdentifierPrefixes: String
+    @Attribute var cSymbolPrefixes: String
 
-    // Elements
-    let alias: GIAlias
+    @Element var alias: GIAlias
+
+    enum CodingKeys: String, CodingKey {
+        // Attributes
+        case name
+        case version
+        case sharedLibrary = "shared-library"
+        case cIdentifierPrefixes = "c:identifier-prefixes"
+        case cSymbolPrefixes = "c:symbol-prefixes"
+
+        // Elements
+        case alias
+    }
 }
 
 struct GIAlias: Codable {
-    // Attributes
-    let name: String
-    let cType: String
+    @Attribute var name: String
+    @Attribute var cType: String
 
-    // Elements
-    // TODO(janvhs): Make a GIDoc struct
-    let doc: String
-    let type: GIType
+    @Element var doc: GIDoc
+    @Element var type: GIType
+
+    enum CodingKeys: String, CodingKey {
+        // Attributes
+        case name
+        case cType = "c:type"
+
+        // Elements
+        case doc
+        case type
+    }
+}
+
+struct GIDoc: Codable {
+    // TODO(janvhs): this should probably be an enum
+    @Attribute var xmlSpace: String
+
+    @Element var value: String
+
+    enum CodingKeys: String, CodingKey {
+        // Attributes
+        case xmlSpace = "xml:space"
+
+        // Elements
+        case value = ""
+    }
 }
 
 struct GIType: Codable {
-    let name: String
-    let cType: String
+    @Attribute var name: String
+    @Attribute var cType: String
+
+    enum CodingKeys: String, CodingKey {
+        // Attributes
+        case name
+        case cType = "c:type"
+    }
 }
