@@ -22,6 +22,9 @@ let package = Package(
         .package(
             url: "https://github.com/CoreOffice/XMLCoder.git",
             from: "0.17.1"),
+        .package(
+            url: "https://github.com/drmohundro/SWXMLHash.git",
+            from: "7.0.0"),
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -40,8 +43,19 @@ let package = Package(
                 .product(
                     name: "ArgumentParser",
                     package: "swift-argument-parser"),
+                .product(
+                    name: "SWXMLHash",
+                    package: "swxmlhash"),
             ]),
         .testTarget(
             name: "SwiftGirTests",
-            dependencies: ["SwiftGir"]),
+            dependencies: [
+                "SwiftGir",
+                .product(
+                    name: "SWXMLHash",
+                    package: "swxmlhash"),
+                .product(
+                    name: "XMLCoder",
+                    package: "xmlcoder"),
+            ]),
     ])

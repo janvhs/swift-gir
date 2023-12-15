@@ -21,6 +21,4 @@
 // The Swift Programming Language
 // https://docs.swift.org/swift-book
 
-public func formatHelloMessage(_ name: String) -> String {
-    "Hello, \(name)"
-}
+// TODO(janvhs): This file should hold the main logic and be the go-to for new users.
