@@ -43,9 +43,6 @@ let package = Package(
                 .product(
                     name: "ArgumentParser",
                     package: "swift-argument-parser"),
-                .product(
-                    name: "SWXMLHash",
-                    package: "swxmlhash"),
             ]),
         .testTarget(
             name: "SwiftGirTests",
@@ -57,5 +54,16 @@ let package = Package(
                 .product(
                     name: "XMLCoder",
                     package: "xmlcoder"),
+            ],
+            resources: [
+                .process("TestData/TreeComparison/collection_element.xml"),
+                .process("TestData/TreeComparison/correct.xml"),
+                .process("TestData/TreeComparison/less_attributes.xml"),
+                .process("TestData/TreeComparison/less_elements.xml"),
+                .process("TestData/TreeComparison/more_attributes.xml"),
+                .process("TestData/TreeComparison/more_elements.xml"),
+                .process("TestData/TreeComparison/not_collection_element.xml"),
+                .process("TestData/TreeComparison/not_optional_attribute.xml"),
+                .process("TestData/TreeComparison/not_optional_element.xml"),
             ]),
     ])

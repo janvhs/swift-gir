@@ -1,0 +1,12 @@
+<root xmlns:glib="http://www.gtk.org/introspection/glib/1.0" version="1.2">
+    <node version="2.0" shared-library="libgobject-2.0.so.0,libglib-2.0.so.0"
+        c:identifier-prefixes="G">
+        First
+    </node>
+    <another-node opt="da">
+        Third
+    </another-node>
+    <opt-node>
+        Fourth
+    </opt-node>
+</root>
